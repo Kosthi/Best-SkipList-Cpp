@@ -108,6 +108,14 @@ function do_init
     ${MAKE_COMMAND} -j4 && \
     ${MAKE_COMMAND} install
 
+  # build fmt
+  cd ${TOPDIR}/deps/3rd/fmt && \
+    mkdir -p build && \
+    cd build && \
+    ${CMAKE_COMMAND} .. && \
+    ${MAKE_COMMAND} -j4 && \
+    ${MAKE_COMMAND} install
+
   cd $current_dir
 }
 

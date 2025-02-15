@@ -4,8 +4,9 @@
 
 #include "skiplist.h"
 
-#include <iomanip>
-#include <sstream>
+#include <fmt/base.h>
+#include <fmt/format.h>
+
 #include <unordered_set>
 
 SkipList::SkipList(int max_level, float prob)
@@ -75,7 +76,7 @@ void SkipList::erase(const std::string& key) {
   // auto &prev = current->forward_[0];
   if (current->forward_[0] && current->forward_[0]->key_ == key) {
     current = current->forward_[0];  // 下一个节点可能大于等于
-                                     // key，等于的话就是我要找的了
+    // key，等于的话就是我要找的了
     size_bytes_ -= current->key_.size() + current->value_.size();
     for (int level = 0; level < current_level_; ++level) {
       // update[level]->forward_[level] =
@@ -125,46 +126,53 @@ void SkipList::print() const {
   }
 
   if (nodes.empty()) {
-    std::cout << "Skip list is empty." << std::endl;
+    fmt::print("Skip list is empty.\n");
     return;
   }
 
-  const int node_width = max_key_length + 4;  // 键宽 + 箭头宽度
+  const int node_width =
+      static_cast<int>(max_key_length) + 4;  // 键宽 + 箭头宽度
 
-  for (int level = current_level_ - 1; level >= 0; --level) {
-    std::cout << "Level" << std::right << std::setw(2) << level << ": ";
-
-    // 收集当前层存在的节点键
-    std::unordered_set<std::string> level_keys;
+  // 预计算每层的节点
+  std::vector<std::unordered_set<std::string> > level_keys(current_level_);
+  for (int level = 0; level < current_level_; ++level) {
     auto node = header_->forward_[level];
     while (node != nullptr) {
-      level_keys.emplace(node->key_);
+      level_keys[level].emplace(node->key_);
       node = node->forward_[level];
     }
+  }
 
-    // 构建当前层的显示字符串
-    std::string level_str;
-    int last_pos = -1;  // 上一个存在节点的位置
+  // 打印每一层
+  for (int level = current_level_ - 1; level >= 0; --level) {
+    fmt::print("Level{:2}: ", level);
+
+    fmt::memory_buffer buffer;
     int loss = 0;
+    int last_pos = -1;  // 上一个存在节点的位置
+
     for (int j = 0; j < nodes.size(); ++j) {
       const auto& key = nodes[j]->key_;
-      // 该层存在这个 key 就打印出来
-      if (level_keys.count(key)) {
+      if (level_keys[level].count(key)) {
         if (last_pos == -1) {
           // 填充起始空格
           if (j > 0) {
-            level_str += std::string(j * node_width - loss, ' ');
+            fmt::format_to(std::back_inserter(buffer), "{:{}}", "",
+                           j * node_width - loss);
           }
-          level_str += key;
+          fmt::format_to(std::back_inserter(buffer), "{}", key);
         } else {
           // 计算间隔并填充箭头
           int gap = j - last_pos - 1;
           if (gap > 0) {
-            level_str += " ";
-            level_str += std::string(gap * node_width - loss, '-');
+            fmt::format_to(std::back_inserter(buffer), " {:-^{}}",
+                           "",                      // 内容为空字符串
+                           gap * node_width - loss  // 总宽度
+            );
+            fmt::format_to(std::back_inserter(buffer), "-> {}", key);
+          } else {
+            fmt::format_to(std::back_inserter(buffer), " -> {}", key);
           }
-          level_str += gap > 0 ? "-> " : " -> ";
-          level_str += key;
         }
         loss = 0;
         last_pos = j;
@@ -172,7 +180,7 @@ void SkipList::print() const {
         loss += max_key_length - key.size();
       }
     }
-    // 打印这层
-    std::cout << level_str << std::endl;
+    // 打印当前层
+    fmt::print("{}\n", fmt::to_string(buffer));
   }
 }
