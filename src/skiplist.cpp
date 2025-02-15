@@ -79,8 +79,6 @@ void SkipList::erase(const std::string& key) {
     // key，等于的话就是我要找的了
     size_bytes_ -= current->key_.size() + current->value_.size();
     for (int level = 0; level < current_level_; ++level) {
-      // update[level]->forward_[level] =
-      // update[level]->forward_[level]->forward_[level];
       // 必须是需要删除的目标节点，否则会误删无关节点
       if (update[level]->forward_[level] &&
           update[level]->forward_[level]->key_ == key) {
