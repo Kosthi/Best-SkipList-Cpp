@@ -82,7 +82,8 @@ void SkipList::erase(const std::string& key) {
       // update[level]->forward_[level] =
       // update[level]->forward_[level]->forward_[level];
       // 必须是需要删除的目标节点，否则会误删无关节点
-      if (update[level]->forward_[level]->key_ == key) {
+      if (update[level]->forward_[level] &&
+          update[level]->forward_[level]->key_ == key) {
         update[level]->forward_[level] = current->forward_[level];
       }
     }
