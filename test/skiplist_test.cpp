@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <fmt/base.h>
 
 // 测试基本插入、查找和删除
 TEST(SkipListTest, BasicOperations) {
@@ -72,6 +73,19 @@ TEST(SkipListTest, LargeScaleInsertAndGet) {
     }
 
     skipList.print();
+}
+
+// 测试智能指针循环引用和内存泄漏
+TEST(SkipListTest, VeryLargeScaleInsert) {
+    SkipList skipList;
+    const int num_elements = 5'000'000;
+
+    // 插入大量数据
+    for (int i = 0; i < num_elements; ++i) {
+        std::string key = "key" + std::to_string(i);
+        std::string value = "value" + std::to_string(i);
+        skipList.insert(key, value);
+    }
 }
 
 // 测试大量数据删除

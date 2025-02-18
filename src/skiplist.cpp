@@ -16,7 +16,7 @@ SkipList::SkipList(int max_level, float prob)
       probability_(prob),
       gen_(rd_()),
       dis_(0.0, 1.0) {
-  header_ = std::make_shared<SkipListNode>("", "", max_level_);
+  header_ = new SkipListNode("", "", max_level_);
 }
 
 int SkipList::random_level() {
@@ -33,7 +33,7 @@ int SkipList::random_level() {
 
 void SkipList::insert(std::string key, std::string value) {
   // 保存搜索过程中经过的节点
-  std::vector<std::shared_ptr<SkipListNode> > update(max_level_, nullptr);
+  std::vector<SkipListNode*> update(max_level_, nullptr);
   auto current = header_;  // 不能使用引用，引用就把 header 改了
   for (int level = current_level_ - 1; level >= 0; --level) {
     while (current->forward_[level] && current->forward_[level]->key_ < key) {
@@ -45,7 +45,6 @@ void SkipList::insert(std::string key, std::string value) {
   if (current && current->key_ == key) {
     current->value_ = std::move(value);
   } else {
-    // 随机生成一个层级 level，插入 0 ~ level 层
     int new_level = random_level();
     if (new_level > current_level_) {
       for (int level = current_level_; level < new_level; ++level) {
@@ -54,8 +53,8 @@ void SkipList::insert(std::string key, std::string value) {
       current_level_ = new_level;
     }
     size_bytes_ += key.size() + value.size();
-    auto new_node = std::make_shared<SkipListNode>(
-        std::move(key), std::move(value), max_level_);
+    auto new_node =
+        new SkipListNode(std::move(key), std::move(value), max_level_);
     for (int level = 0; level < new_level; ++level) {
       new_node->forward_[level] = update[level]->forward_[level];
       update[level]->forward_[level] = new_node;
@@ -65,7 +64,7 @@ void SkipList::insert(std::string key, std::string value) {
 
 void SkipList::erase(const std::string& key) {
   // 保存搜索过程中经过的节点
-  std::vector<std::shared_ptr<SkipListNode> > update(max_level_, nullptr);
+  std::vector<SkipListNode*> update(max_level_, nullptr);
   auto current = header_;
   for (int level = current_level_ - 1; level >= 0; --level) {
     while (current->forward_[level] && current->forward_[level]->key_ < key) {
@@ -113,7 +112,7 @@ bool SkipList::contains(const std::string& key) const {
 
 void SkipList::print() const {
   // 获取底层所有节点并计算最大键长
-  std::vector<std::shared_ptr<SkipListNode> > nodes;
+  std::vector<SkipListNode*> nodes;
   auto current = header_->forward_[0];
   size_t max_key_length = 0;
   while (current != nullptr) {

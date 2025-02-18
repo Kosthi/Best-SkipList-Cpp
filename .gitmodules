@@ -4,3 +4,6 @@
 [submodule "deps/3rd/fmt"]
 	path = deps/3rd/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "deps/3rd/benchmark"]
+	path = deps/3rd/benchmark
+	url = https://github.com/google/benchmark.git

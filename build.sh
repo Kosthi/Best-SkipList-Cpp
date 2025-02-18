@@ -108,6 +108,14 @@ function do_init
     ${MAKE_COMMAND} -j4 && \
     ${MAKE_COMMAND} install
 
+  # build google benchmark
+  cd ${TOPDIR}/deps/3rd/benchmark && \
+    mkdir -p build && \
+    cd build && \
+    ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF .. && \
+    ${MAKE_COMMAND} -j4 && \
+    ${MAKE_COMMAND} install
+
   # build fmt
   cd ${TOPDIR}/deps/3rd/fmt && \
     mkdir -p build && \
