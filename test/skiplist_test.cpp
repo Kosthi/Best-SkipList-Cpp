@@ -1,4 +1,5 @@
 #include "skiplist.h"
+#include "skiplist.cpp"
 
 #include <algorithm>
 #include <atomic>
@@ -13,11 +14,50 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <fmt/base.h>
+
+typedef std::string Key;
+typedef std::string Value;
+
+struct Comparator {
+    int operator()(const Key &a, const Key &b) const {
+        if (a < b) {
+            return -1;
+        } else if (a > b) {
+            return +1;
+        } else {
+            return 0;
+        }
+    }
+};
+
+struct IntComparator {
+    int operator()(const int &a, const int &b) const {
+        if (a < b) {
+            return -1;
+        } else if (a > b) {
+            return +1;
+        } else {
+            return 0;
+        }
+    }
+};
+
+struct DoubleComparator {
+    int operator()(const double &a, const double &b) const {
+        if (a < b) {
+            return -1;
+        } else if (a > b) {
+            return +1;
+        } else {
+            return 0;
+        }
+    }
+};
 
 // 测试基本插入、查找和删除
 TEST(SkipListTest, BasicOperations) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
 
     // 测试插入和查找
     skipList.insert("key1", "value1");
@@ -31,12 +71,33 @@ TEST(SkipListTest, BasicOperations) {
     skipList.erase("key1");
     EXPECT_FALSE(skipList.get("key1").has_value());
 
-    skipList.print();
+    // skipList.print();
+}
+
+TEST(SkipListTest, Template) {
+    IntComparator cmp1;
+    SkipList<int, int, IntComparator> skip_list1(cmp1);
+    // 测试插入和查找
+    for (int i = 0; i < 100; ++i) {
+        skip_list1.insert(i, i);
+        EXPECT_EQ(skip_list1.get(i).value(), i);
+    }
+    // skip_list1.print();
+
+    DoubleComparator cmp2;
+    SkipList<double, double, DoubleComparator> skip_list2(cmp2);
+    // 测试插入和查找
+    for (int i = 0; i < 100; ++i) {
+        skip_list2.insert(i + i / 0.42, i + 1);
+        EXPECT_EQ(skip_list2.get(i+ i/0.42).value(), i + 1);
+    }
+    // skip_list2.print();
 }
 
 // 测试迭代器
 TEST(SkipListTest, Iterator) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
     skipList.insert("key1", "value1");
     skipList.insert("key2", "value2");
     skipList.insert("key3", "value3");
@@ -55,7 +116,8 @@ TEST(SkipListTest, Iterator) {
 
 // 测试大量数据插入和查找
 TEST(SkipListTest, LargeScaleInsertAndGet) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
     const int num_elements = 1000;
 
     // 插入大量数据
@@ -72,12 +134,13 @@ TEST(SkipListTest, LargeScaleInsertAndGet) {
         EXPECT_EQ(skipList.get(key).value(), expected_value);
     }
 
-    skipList.print();
+    // skipList.print();
 }
 
 // 测试智能指针循环引用和内存泄漏
 TEST(SkipListTest, VeryLargeScaleInsert) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
     const int num_elements = 5'000'000;
 
     // 插入大量数据
@@ -90,7 +153,8 @@ TEST(SkipListTest, VeryLargeScaleInsert) {
 
 // 测试大量数据删除
 TEST(SkipListTest, LargeScaleErase) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
     const int num_elements = 10000;
 
     // 插入大量数据
@@ -115,7 +179,8 @@ TEST(SkipListTest, LargeScaleErase) {
 
 // 测试重复插入
 TEST(SkipListTest, DuplicateInsert) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
 
     // 重复插入相同的key
     skipList.insert("key1", "value1");
@@ -128,7 +193,8 @@ TEST(SkipListTest, DuplicateInsert) {
 
 // 测试空跳表
 TEST(SkipListTest, EmptySkipList) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
 
     // 验证空跳表的查找和删除
     EXPECT_FALSE(skipList.get("nonexistent_key").has_value());
@@ -137,7 +203,8 @@ TEST(SkipListTest, EmptySkipList) {
 
 // 测试随机插入和删除
 TEST(SkipListTest, RandomInsertAnderase) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
     std::unordered_set<std::string> keys;
     const int num_operations = 10000;
 
@@ -166,7 +233,8 @@ TEST(SkipListTest, RandomInsertAnderase) {
 
 // 测试内存大小跟踪
 TEST(SkipListTest, MemorySizeTracking) {
-    SkipList skipList;
+    Comparator cmp;
+    SkipList<Key, Value, Comparator> skipList(cmp);
 
     // 插入数据
     skipList.insert("key1", "value1");

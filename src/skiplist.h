@@ -14,20 +14,22 @@
 #include <utility>
 #include <vector>
 
+template <typename Key, typename Value>
 struct SkipListNode {
-  std::string key_;                     // 节点存储的键
-  std::string value_;                   // 节点存储的值
+  Key key_;                             // 节点存储的键
+  Value value_;                         // 节点存储的值
   std::vector<SkipListNode*> forward_;  // 多层前向指针
 
-  SkipListNode(std::string key, std::string value, int level)
+  SkipListNode(Key key, Value value, int level)
       : key_(std::move(key)),
         value_(std::move(value)),
         forward_(level, nullptr) {}
 };
 
+template <typename Key, typename Value, class Comparator>
 class SkipList {
  public:
-  explicit SkipList(int max_level = 16, float prob = 0.5);
+  explicit SkipList(Comparator cmp, int max_level = 16, float prob = 0.5);
 
   SkipList(const SkipList&) = delete;
 
@@ -43,13 +45,13 @@ class SkipList {
     delete header_;
   }
 
-  void insert(std::string key, std::string value);
+  void insert(Key key, Value value);
 
-  void erase(const std::string& key);
+  void erase(const Key& key);
 
-  std::optional<std::string> get(const std::string& key) const;
+  std::optional<Key> get(const Key& key) const;
 
-  bool contains(const std::string& key) const;
+  bool contains(const Key& key) const;
 
   size_t get_size() const { return size_bytes_; }
 
@@ -60,10 +62,12 @@ class SkipList {
   int max_level_;
   int current_level_;
   float probability_;
-  SkipListNode* header_;
+  SkipListNode<Key, Value>* header_;
   std::random_device rd_;
   std::mt19937 gen_;
   std::uniform_real_distribution<> dis_;
+
+  Comparator const compare_;
 
   int random_level();
 };

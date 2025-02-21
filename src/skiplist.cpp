@@ -7,19 +7,38 @@
 #include <fmt/base.h>
 #include <fmt/format.h>
 
+#include <sstream>
 #include <unordered_set>
 
-SkipList::SkipList(int max_level, float prob)
+// 通用版本：将 Key 转换为字符串后计算长度
+template <typename Key>
+size_t get_key_length(const Key& key) {
+  std::ostringstream oss;
+  oss << key;
+  return oss.str().size();
+}
+
+// 特化版本：若 Key 是 std::string，直接返回长度
+template <>
+size_t get_key_length<std::string>(const std::string& key) {
+  return key.size();
+}
+
+template <typename Key, typename Value, class Comparator>
+SkipList<Key, Value, Comparator>::SkipList(Comparator cmp, int max_level,
+                                           float prob)
     : size_bytes_(0),
       max_level_(max_level),
       current_level_(1),
       probability_(prob),
       gen_(rd_()),
-      dis_(0.0, 1.0) {
-  header_ = new SkipListNode("", "", max_level_);
+      dis_(0.0, 1.0),
+      compare_(cmp) {
+  header_ = new SkipListNode<Key, Value>({}, {}, max_level_);
 }
 
-int SkipList::random_level() {
+template <typename Key, typename Value, class Comparator>
+int SkipList<Key, Value, Comparator>::random_level() {
   int level = 1;
   // 通过"抛硬币"的方式随机生成层数：
   // - 每次有50%的概率增加一层
@@ -31,18 +50,20 @@ int SkipList::random_level() {
   return level;
 }
 
-void SkipList::insert(std::string key, std::string value) {
+template <typename Key, typename Value, class Comparator>
+void SkipList<Key, Value, Comparator>::insert(Key key, Value value) {
   // 保存搜索过程中经过的节点
-  std::vector<SkipListNode*> update(max_level_, nullptr);
+  std::vector<SkipListNode<Key, Value>*> update(max_level_, nullptr);
   auto current = header_;  // 不能使用引用，引用就把 header 改了
   for (int level = current_level_ - 1; level >= 0; --level) {
-    while (current->forward_[level] && current->forward_[level]->key_ < key) {
+    while (current->forward_[level] &&
+           compare_(current->forward_[level]->key_, key) < 0) {
       current = current->forward_[level];
     }
     update[level] = current;
   }
   current = current->forward_[0];
-  if (current && current->key_ == key) {
+  if (current && compare_(current->key_, key) == 0) {
     current->value_ = std::move(value);
   } else {
     int new_level = random_level();
@@ -52,7 +73,7 @@ void SkipList::insert(std::string key, std::string value) {
       }
       current_level_ = new_level;
     }
-    size_bytes_ += key.size() + value.size();
+    size_bytes_ += get_key_length(key) + get_key_length(value);
     auto new_node =
         new SkipListNode(std::move(key), std::move(value), max_level_);
     for (int level = 0; level < new_level; ++level) {
@@ -62,25 +83,28 @@ void SkipList::insert(std::string key, std::string value) {
   }
 }
 
-void SkipList::erase(const std::string& key) {
+template <typename Key, typename Value, class Comparator>
+void SkipList<Key, Value, Comparator>::erase(const Key& key) {
   // 保存搜索过程中经过的节点
-  std::vector<SkipListNode*> update(max_level_, nullptr);
+  std::vector<SkipListNode<Key, Value>*> update(max_level_, nullptr);
   auto current = header_;
   for (int level = current_level_ - 1; level >= 0; --level) {
-    while (current->forward_[level] && current->forward_[level]->key_ < key) {
+    while (current->forward_[level] &&
+           compare_(current->forward_[level]->key_, key) < 0) {
       current = current->forward_[level];
     }
     update[level] = current;  // 都是 < key 或 nullptr
   }
   // auto &prev = current->forward_[0];
-  if (current->forward_[0] && current->forward_[0]->key_ == key) {
+  if (current->forward_[0] && compare_(current->forward_[0]->key_, key) == 0) {
     current = current->forward_[0];  // 下一个节点可能大于等于
     // key，等于的话就是我要找的了
-    size_bytes_ -= current->key_.size() + current->value_.size();
+    size_bytes_ -=
+        get_key_length(current->key_) + get_key_length(current->value_);
     for (int level = 0; level < current_level_; ++level) {
       // 必须是需要删除的目标节点，否则会误删无关节点
       if (update[level]->forward_[level] &&
-          update[level]->forward_[level]->key_ == key) {
+          compare_(update[level]->forward_[level]->key_, key) == 0) {
         update[level]->forward_[level] = current->forward_[level];
       }
     }
@@ -92,33 +116,39 @@ void SkipList::erase(const std::string& key) {
   }
 }
 
-std::optional<std::string> SkipList::get(const std::string& key) const {
+template <typename Key, typename Value, class Comparator>
+std::optional<Key> SkipList<Key, Value, Comparator>::get(const Key& key) const {
   auto current = header_;
   for (int level = current_level_ - 1; level >= 0; --level) {
-    while (current->forward_[level] && current->forward_[level]->key_ < key) {
+    while (current->forward_[level] &&
+           compare_(current->forward_[level]->key_, key) < 0) {
       current = current->forward_[level];
     }
   }
   current = current->forward_[0];
-  if (current && current->key_ == key) {
+  if (current && compare_(current->key_, key) == 0) {
     return current->value_;
   }
   return {};
 }
 
-bool SkipList::contains(const std::string& key) const {
+template <typename Key, typename Value, class Comparator>
+bool SkipList<Key, Value, Comparator>::contains(const Key& key) const {
   return get(key).has_value();
 }
 
-void SkipList::print() const {
+template <typename Key, typename Value, class Comparator>
+void SkipList<Key, Value, Comparator>::print() const {
   // 获取底层所有节点并计算最大键长
-  std::vector<SkipListNode*> nodes;
+  std::vector<SkipListNode<Key, Value>*> nodes;
   auto current = header_->forward_[0];
   size_t max_key_length = 0;
   while (current != nullptr) {
     nodes.emplace_back(current);
-    if (current->key_.length() > max_key_length) {
-      max_key_length = current->key_.length();
+    // 计算 Key 长度
+    auto length = get_key_length(current->key_);
+    if (length > max_key_length) {
+      max_key_length = length;
     }
     current = current->forward_[0];
   }
@@ -132,7 +162,7 @@ void SkipList::print() const {
       static_cast<int>(max_key_length) + 4;  // 键宽 + 箭头宽度
 
   // 预计算每层的节点
-  std::vector<std::unordered_set<std::string> > level_keys(current_level_);
+  std::vector<std::unordered_set<Key> > level_keys(current_level_);
   for (int level = 0; level < current_level_; ++level) {
     auto node = header_->forward_[level];
     while (node != nullptr) {
@@ -175,7 +205,7 @@ void SkipList::print() const {
         loss = 0;
         last_pos = j;
       } else {
-        loss += max_key_length - key.size();
+        loss += max_key_length - get_key_length(key);
       }
     }
     // 打印当前层

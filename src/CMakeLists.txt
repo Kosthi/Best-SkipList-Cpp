@@ -15,8 +15,8 @@ endforeach (F)
 
 find_package(fmt REQUIRED)
 
-add_library(libskiplist STATIC ${LIB_SRC})
+add_library(skiplist STATIC ${LIB_SRC})
 
 add_executable(mini_lsm main.cpp)
 
-target_link_libraries(mini_lsm libskiplist fmt)
+target_link_libraries(mini_lsm skiplist fmt)
