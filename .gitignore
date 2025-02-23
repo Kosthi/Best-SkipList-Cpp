@@ -40,3 +40,6 @@ build_release
 
 # CLion
 .idea
+
+# Install thirdparty libs
+deps/3rd/

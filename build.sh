@@ -7,6 +7,9 @@ BUILD_SH=$TOPDIR/build.sh
 
 CMAKE_COMMAND="cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 --log-level=STATUS"
 
+echo "THIRD_PARTY_INSTALL_PREFIX is ${THIRD_PARTY_INSTALL_PREFIX:=$TOPDIR/deps/3rd/usr/local}"
+CMAKE_COMMAND_THIRD_PARTY="$CMAKE_COMMAND -DCMAKE_INSTALL_PREFIX=$THIRD_PARTY_INSTALL_PREFIX"
+
 ALL_ARGS=("$@")
 BUILD_ARGS=()
 MAKE_ARGS=()
@@ -104,7 +107,7 @@ function do_init
   cd ${TOPDIR}/deps/3rd/googletest && \
     mkdir -p build && \
     cd build && \
-    ${CMAKE_COMMAND} .. && \
+    ${CMAKE_COMMAND_THIRD_PARTY} .. && \
     ${MAKE_COMMAND} -j4 && \
     ${MAKE_COMMAND} install
 
@@ -112,7 +115,7 @@ function do_init
   cd ${TOPDIR}/deps/3rd/benchmark && \
     mkdir -p build && \
     cd build && \
-    ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF .. && \
+    ${CMAKE_COMMAND_THIRD_PARTY} -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF .. && \
     ${MAKE_COMMAND} -j4 && \
     ${MAKE_COMMAND} install
 
@@ -120,7 +123,7 @@ function do_init
   cd ${TOPDIR}/deps/3rd/fmt && \
     mkdir -p build && \
     cd build && \
-    ${CMAKE_COMMAND} .. && \
+    ${CMAKE_COMMAND_THIRD_PARTY} .. && \
     ${MAKE_COMMAND} -j4 && \
     ${MAKE_COMMAND} install
 
