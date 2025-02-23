@@ -37,6 +37,8 @@ cmake-build-release
 build
 build_debug
 build_release
+cmake-build-debug-clang-18
+cmake-build-release-clang-18
 
 # CLion
 .idea

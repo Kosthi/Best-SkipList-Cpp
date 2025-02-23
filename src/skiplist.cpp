@@ -108,6 +108,7 @@ void SkipList<Key, Value, Comparator>::erase(const Key& key) {
         update[level]->forward_[level] = current->forward_[level];
       }
     }
+    delete current;  // 释放被删除的节点内存
     // 删除节点可能导致层级降低
     while (current_level_ > 1 &&
            header_->forward_[current_level_ - 1] == nullptr) {
